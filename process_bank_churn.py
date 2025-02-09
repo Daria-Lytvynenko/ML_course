@@ -4,7 +4,7 @@ import numpy as np
 from imblearn.over_sampling import SMOTENC
 
 
-
+# Видалення зайвих колонок, визначення вхідних даних та таргету, позначення числових та категоріальних колонок
 def clean_data(raw_df):
     raw_df.drop(['Surname', 'CustomerId'], axis=1, inplace=True)
     X=raw_df.iloc[:,:-1]
@@ -15,6 +15,7 @@ def clean_data(raw_df):
     categorical_cols=X.select_dtypes(include='object').columns.tolist()
     return X, y, input_cols, target_col, numeric_cols, categorical_cols
 
+# Розбиття даних на тренувальний та валідаційний набори даних
 def split_data(X, y):
     X_train, X_val, y_train, y_val=train_test_split(X, y, test_size=0.25, random_state=42, stratify=y)
     train_inputs=X_train
@@ -37,7 +38,7 @@ def encode_cat(train_inputs, val_inputs, categorical_cols):
     return encoder, categories
 
 
-# Масштабування числови колонок для приведення всіх значень до одного масштабу, оскільки різні колонки містять значення в різних діапазонах, що може негативно вплинути на
+# Масштабування числових колонок для приведення всіх значень до одного масштабу, оскільки різні колонки містять значення в різних діапазонах, що може негативно вплинути на
 # сходження алгоритму
 def scale_num(train_inputs, val_inputs, numeric_cols):
     scaler=MinMaxScaler()
@@ -46,20 +47,21 @@ def scale_num(train_inputs, val_inputs, numeric_cols):
     val_inputs[numeric_cols]=scaler.transform(val_inputs[numeric_cols])
     return scaler
 
+# Створення вхідного валідаційного та тренувального набору даних через об'єднання масштабованих числових та закодованих категоріальних колонок 
 def create_full_inputs(train_inputs, val_inputs, numeric_cols, categories):
     cols=np.concatenate((numeric_cols, categories))
     X_trains=train_inputs[cols]
     X_vals=val_inputs[cols]
     return X_trains, X_vals
     
-    
+ # Балансування класів за допомогою технології SMOTENC   
 def class_balance(X_trains, train_targets):
     cat_cols = ['NumOfProducts','HasCrCard', 'IsActiveMember', 'France', 'Germany', 'Spain', 'Female', 'Male']
     smenc = SMOTENC(random_state=42, categorical_features=cat_cols)
     X_train_smenc, y_train_smenc = smenc.fit_resample(X_trains, train_targets)
     return X_train_smenc, y_train_smenc
     
-    
+ # Повна попередня обробка даних   
 def preprocess_data(raw_df):
     X, y, input_cols, target_col, numeric_cols, categorical_cols=clean_data(raw_df)
     train_inputs, val_inputs, train_targets, val_targets=split_data(X,y)
